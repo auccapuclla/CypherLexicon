@@ -1,47 +1,65 @@
-export const agents = [
+// CypherLexicon Agent Configurations & Scoring Telemetry
+export interface Agent {
+  id: number;
+  name: string;
+  spec: string;
+  rep: number;
+  systemPrompt: string;
+  walletAddress: string;
+}
+
+export interface AgentResponse {
+  title: string;
+  resolution_criteria: string;
+  tags: string[];
+  confidence_score: number;
+}
+
+export const agents: Agent[] = [
   {
     id: 0,
     name: "CN_Macro",
     spec: "Chinese Macroeconomics & Monetary Policy",
     rep: 0.85,
-    systemPrompt: "You are an expert in Chinese macroeconomics and monetary policy. Your job is to translate non-English financial news into a precise Polymarket prediction market question. Always respond with valid JSON only, no markdown."
+    systemPrompt: "You are an expert in Chinese macroeconomics and monetary policy. Your job is to translate non-English financial news into a precise Polymarket prediction market question. Always respond with valid JSON only, no markdown.",
+    walletAddress: "0x71C7656EC7ab88b098defB751B7401B5f6d1476B"
   },
   {
     id: 1,
     name: "Generic_AI",
     spec: "General Purpose Translation & Markets",
     rep: 0.60,
-    systemPrompt: "You are a general-purpose translator. Translate this news headline into a Polymarket-style prediction market question. Always respond with valid JSON only, no markdown."
+    systemPrompt: "You are a general-purpose translator. Translate this news headline into a Polymarket-style prediction market question. Always respond with valid JSON only, no markdown.",
+    walletAddress: "0x2195f51119A31F758e5fA215dD9821d7bC12F8AC"
   },
   {
     id: 2,
     name: "Asia_Expert",
     spec: "Asian Geopolitics & Financial Markets",
     rep: 0.92,
-    systemPrompt: "You are an expert in Asian geopolitics and financial markets. Translate this news into a precise, well-scoped prediction market question. Always respond with valid JSON only, no markdown."
+    systemPrompt: "You are an expert in Asian geopolitics and financial markets. Translate this news into a precise, well-scoped prediction market question. Always respond with valid JSON only, no markdown.",
+    walletAddress: "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1"
   }
 ];
 
-export function calculateScore(bid, rep, confidenceScore) {
-  // Bids are 100-1000, we normalize to 0-1
-  const normalizedBid = (bid - 100) / 900;
-  const rawScore = (normalizedBid * 0.40) + (rep * 0.35) + (confidenceScore * 0.25);
+export function calculateScore(bid: number, rep: number, confidenceScore: number): { score: number; quality: number; isQualified: boolean } {
+  const quality = rep * confidenceScore;
+  const isQualified = quality >= 0.65;
   // Round to 4 decimal places for clean display
-  const score = Math.round(rawScore * 10000) / 10000;
-  return { score, rawScore };
+  const roundedQuality = Math.round(quality * 10000) / 10000;
+  return { score: roundedQuality, quality: roundedQuality, isQualified };
 }
 
-export function calculatePoints(bid) {
+export function calculatePoints(bid: number): number {
   return 10 + Math.floor(bid / 50);
 }
 
-export function calculateRoyalty(bid) {
+export function calculateRoyalty(bid: number): number {
   return Math.floor(bid * 0.15);
 }
 
-// Tailored high-quality mock responses in case API fails or is not provided.
-// Maps newsIndex (0-3) to agentId (0-2) responses.
-export const fallbackResponses = {
+// Tailored high-quality fallback responses indexed by newsIndex (0-3) and then agentId (0-2)
+export const fallbackResponses: Record<number, Record<number, AgentResponse>> = {
   0: { // PBOC announces 50bps RRR cut
     0: {
       title: "Will the People's Bank of China (PBOC) cut the Reserve Requirement Ratio (RRR) again by 50 basis points or more in 2026?",

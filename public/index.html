@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Translation Arena — AI Agent Prediction Market Hackathon</title>
+  <title>CypherLexicon — AI Agent Prediction Market Contract Oracle</title>
   <!-- Google Fonts: JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,8 +11,8 @@
   
   <style>
     :root {
-      --bg-color: #030712;
-      --card-bg: rgba(17, 24, 39, 0.7);
+      --bg-color: #02040a;
+      --card-bg: rgba(13, 17, 23, 0.75);
       --terminal-green: #10B981;
       --terminal-green-dim: #065F46;
       --terminal-green-glow: rgba(16, 185, 129, 0.25);
@@ -22,7 +22,7 @@
       --terminal-amber: #F59E0B;
       --terminal-red: #EF4444;
       --border-color: rgba(16, 185, 129, 0.15);
-      --border-color-dim: rgba(255, 255, 255, 0.05);
+      --border-color-dim: rgba(255, 255, 255, 0.04);
       --font-mono: 'JetBrains Mono', monospace;
     }
 
@@ -34,11 +34,11 @@
 
     body {
       background-color: var(--bg-color);
-      /* Subtle scanline and grid pattern */
+      /* Retro terminal styling with scanlines & matrix grid */
       background-image: 
         linear-gradient(rgba(16, 185, 129, 0.02) 1px, transparent 1px),
         linear-gradient(90deg, rgba(16, 185, 129, 0.02) 1px, transparent 1px),
-        linear-gradient(rgba(0, 0, 0, 0.3) 50%, rgba(255, 255, 255, 0.02) 50%);
+        linear-gradient(rgba(0, 0, 0, 0.45) 50%, rgba(255, 255, 255, 0.01) 50%);
       background-size: 30px 30px, 30px 30px, 100% 4px;
       color: #e5e7eb;
       font-family: var(--font-mono);
@@ -60,8 +60,8 @@
       align-items: center;
       position: relative;
       overflow: hidden;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
     }
 
     header::before {
@@ -135,7 +135,7 @@
       display: flex;
       flex-direction: column;
       gap: 1rem;
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(12px);
     }
 
     .box-title {
@@ -172,7 +172,7 @@
     }
 
     select {
-      background: #090d16;
+      background: #0d1117;
       border: 1px solid var(--border-color);
       color: #ffffff;
       padding: 0.75rem;
@@ -246,7 +246,7 @@
       border: 1px solid var(--border-color);
       border-radius: 4px;
       padding: 1.5rem;
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(12px);
       text-align: center;
     }
 
@@ -318,11 +318,11 @@
       padding: 1.5rem;
       display: flex;
       flex-direction: column;
-      gap: 1.25rem;
+      gap: 1rem;
       transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
       overflow: hidden;
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(12px);
     }
 
     .agent-card::after {
@@ -339,13 +339,13 @@
     .agent-card:hover {
       border-color: rgba(6, 182, 212, 0.3);
       transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.7);
     }
 
     .agent-card.winner {
       border-color: var(--terminal-green);
       box-shadow: 0 0 25px var(--terminal-green-glow);
-      background: rgba(16, 185, 129, 0.05);
+      background: rgba(16, 185, 129, 0.04);
     }
 
     .agent-card.winner::after {
@@ -382,6 +382,9 @@
     }
 
     .agent-id {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       font-size: 0.65rem;
       color: #6b7280;
       letter-spacing: 0.1em;
@@ -400,12 +403,48 @@
       line-height: 1.3;
     }
 
+    /* Wallet styling in cards */
+    .agent-wallet-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+      color: #9ca3af;
+    }
+
+    .wallet-addr {
+      cursor: help;
+      color: #ffffff;
+      text-decoration: underline dotted rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-copy {
+      background: transparent;
+      border: none;
+      color: var(--terminal-cyan);
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      font-weight: bold;
+      transition: color 0.15s ease;
+    }
+
+    .btn-copy:hover {
+      color: #ffffff;
+      text-shadow: 0 0 6px var(--terminal-cyan);
+    }
+
     .agent-stats {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 0.75rem 1rem;
-      background: rgba(0,0,0,0.25);
-      border: 1px solid rgba(255,255,255,0.03);
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.02);
       padding: 0.75rem;
       border-radius: 4px;
     }
@@ -481,11 +520,11 @@
     /* Result Panel & Persistent Leaderboard (2 Columns) */
     .bottom-dashboard {
       display: grid;
-      grid-template-columns: 1.2fr 1fr;
+      grid-template-columns: 1.2fr 1.1fr;
       gap: 1.5rem;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 1024px) {
       .bottom-dashboard {
         grid-template-columns: 1fr;
       }
@@ -523,20 +562,20 @@
     }
 
     .market-card {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, rgba(17, 24, 39, 0.8) 100%);
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, rgba(17, 24, 39, 0.85) 100%);
       border: 1px solid var(--terminal-green);
       border-radius: 4px;
       padding: 1.5rem;
       display: flex;
       flex-direction: column;
       gap: 1.25rem;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 15px rgba(16, 185, 129, 0.05);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 15px rgba(16, 185, 129, 0.05);
       position: relative;
     }
 
     .market-card::before {
-      content: 'POLYMARKET CONTRACT SPEC';
+      content: 'ARC LEXICON SMART CONTRACT SPEC';
       position: absolute;
       top: -0.5rem;
       left: 1.5rem;
@@ -561,10 +600,26 @@
       font-size: 0.85rem;
       color: #9ca3af;
       line-height: 1.5;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.35);
       padding: 1rem;
       border-radius: 4px;
       border-left: 2px solid var(--terminal-green-dim);
+    }
+
+    .market-contract-telemetry {
+      display: flex;
+      justify-content: space-between;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      color: #9ca3af;
+      border: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    .market-contract-telemetry span.addr-val {
+      color: #ffffff;
+      font-weight: bold;
     }
 
     .market-footer {
@@ -589,7 +644,7 @@
       color: #9ca3af;
       padding: 0.2rem 0.5rem;
       border-radius: 2px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       text-transform: uppercase;
     }
 
@@ -626,7 +681,7 @@
       border: 1px solid var(--border-color);
       border-radius: 4px;
       padding: 1.5rem;
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(12px);
       display: flex;
       flex-direction: column;
       gap: 1rem;
@@ -700,7 +755,7 @@
     .rank-cell {
       color: #6b7280;
       font-weight: bold;
-      width: 15%;
+      width: 10%;
     }
 
     tr.leaderboard-row-0 .rank-cell {
@@ -712,6 +767,11 @@
       font-weight: bold;
     }
 
+    .wallet-cell {
+      font-size: 0.7rem;
+      color: #9ca3af;
+    }
+
     .numeric-cell {
       text-align: right;
     }
@@ -720,11 +780,58 @@
       color: var(--terminal-cyan);
     }
 
-    .empty-leaderboard {
-      text-align: center;
+    /* History Ledger Table */
+    .history-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 1.5rem;
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
+    }
+
+    .history-table th {
       color: #6b7280;
-      padding: 2rem 0;
+      font-weight: normal;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+    }
+
+    .history-table td {
+      padding: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      font-size: 0.8rem;
+    }
+
+    .tx-cell {
+      color: var(--terminal-cyan);
+      font-weight: bold;
+    }
+
+    .time-cell {
+      color: #6b7280;
+    }
+
+    .winner-cell-hist {
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    .empty-history {
+      text-align: center;
+      color: #4b5563;
+      padding: 1.5rem 0;
       font-style: italic;
+    }
+
+    .confirmed-badge {
+      color: var(--terminal-green);
+      font-weight: bold;
     }
 
     /* Keyframes & Animations */
@@ -738,7 +845,7 @@
       100% { opacity: 1; }
     }
 
-    /* Notification log system (bottom-most row) */
+    /* System logs notification console */
     .system-logs {
       background: #02040a;
       border: 1px solid var(--border-color-dim);
@@ -777,15 +884,15 @@
   <!-- Retro Terminal Header -->
   <header>
     <div class="header-title-section">
-      <h1>TRANSLATION <span class="accent">ARENA</span></h1>
-      <p>AI agent bidding & translation race for prediction market alpha</p>
+      <h1>CYPHER<span class="accent">LEXICON</span></h1>
+      <p>AI agent bidding & translation race for prediction market alpha (TypeScript // SQLite // Arc Network)</p>
     </div>
     <div class="system-telemetry">
       <div class="telemetry-row">
-        <span>STATUS: </span><span class="green-pulse">ONLINE</span>
+        <span>ARC SMART CONTRACTS:</span><span class="green-pulse">CONNECTED</span>
       </div>
       <div class="telemetry-row">
-        <span>TIME:</span><span id="utc-clock">2026-05-22 22:39:15 UTC</span>
+        <span>CLOCK:</span><span id="utc-clock">2026-05-23 21:24:00 UTC</span>
       </div>
     </div>
   </header>
@@ -829,12 +936,11 @@
   <!-- Agent Competitor Grid (3 columns) -->
   <div class="agent-race-section">
     <div class="box-title" style="margin-bottom: 0.5rem;">
-      <span>AGENT ARENA COMPETITORS</span>
+      <span>AGENT ARENA COMPETITORS & CONTRACT OWNER WALLETS</span>
       <div class="dot" style="background: var(--terminal-cyan); box-shadow: 0 0 8px var(--terminal-cyan);"></div>
     </div>
     <div class="agent-columns" id="agent-columns">
-      <!-- Agent cards generated dynamically to keep JS in sync, or static in html and manipulated via JS -->
-      <!-- We build them dynamically in JS based on our definition -->
+      <!-- Agent cards generated dynamically to keep JS in sync -->
     </div>
   </div>
 
@@ -844,12 +950,15 @@
     <div class="winning-card-container" id="winning-card-container">
       <div class="winner-headline-banner">
         <span class="arrow">►</span>
-        <span>AUCTION FINALIZED: WINNING TRANSLATION RESOLVED</span>
+        <span>AUCTION FINALIZED: ARC LEXICON CONTRACT RESOLVED</span>
       </div>
       
       <div class="market-card">
         <div class="market-title" id="winner-market-title">---</div>
         <div class="market-criteria" id="winner-market-criteria">---</div>
+        <div class="market-contract-telemetry">
+          <span>CREATOR WALLET: <span class="addr-val" id="winner-contract-wallet">---</span></span>
+        </div>
         <div class="market-footer">
           <div class="market-tags" id="winner-market-tags">
             <!-- Populated dynamically -->
@@ -867,17 +976,18 @@
     <!-- Right: Leaderboard -->
     <div class="leaderboard-container">
       <div class="leaderboard-header">
-        <span>PERSISTENT STATS LEADERBOARD</span>
-        <button class="btn-reset-stats" id="btn-reset-stats">RESET STATS</button>
+        <span>PERSISTENT DATABASE LEADERBOARD</span>
+        <button class="btn-reset-stats" id="btn-reset-stats">RESET DATABASE</button>
       </div>
       <table>
         <thead>
           <tr>
             <th>RANK</th>
-            <th>AGENT NAME</th>
+            <th>AGENT</th>
+            <th>WALLET</th>
             <th class="numeric-cell">WINS</th>
-            <th class="numeric-cell">TOTAL POINTS</th>
-            <th class="numeric-cell">EARNED (USDC)</th>
+            <th class="numeric-cell">POINTS</th>
+            <th class="numeric-cell">EARNED</th>
           </tr>
         </thead>
         <tbody id="leaderboard-body">
@@ -887,31 +997,65 @@
     </div>
   </div>
 
+  <!-- Transaction History Ledger -->
+  <div class="history-container">
+    <div class="box-title">
+      <span>CYPHERLEXICON CONTRACT HISTORY LEDGER (RECENT 5 BLOCKS)</span>
+      <div class="dot" style="background: var(--terminal-green); box-shadow: 0 0 8px var(--terminal-green);"></div>
+    </div>
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>TX HASH</th>
+          <th>TIMESTAMP</th>
+          <th>SOURCE TARGET</th>
+          <th>CONTRACT OWNER</th>
+          <th class="numeric-cell">ROYALTY PAID</th>
+          <th>STATUS</th>
+        </tr>
+      </thead>
+      <tbody id="history-body">
+        <!-- Populated dynamically from SQLite -->
+      </tbody>
+    </table>
+  </div>
+
   <!-- Uptime and audit logs footer -->
   <div class="system-logs">
     <div class="green-indicator"></div>
     <div class="log-stream" id="log-stream">
-      <span class="time">[17:39:15]</span> System Ready. Select feed item and initiate auction to simulate translator matches.
+      <span class="time">[21:24:00]</span> CypherLexicon Oracle database active. Select news feed and execute contract auction.
     </div>
   </div>
 
   <script>
     // System definitions loaded in frontend
     const AGENTS_LIST = [
-      { id: 0, name: "CN_Macro", specialty: "Chinese Macro & Monetary Policy", rep: 0.85 },
-      { id: 1, name: "Generic_AI", specialty: "General Purpose Translation & Markets", rep: 0.60 },
-      { id: 2, name: "Asia_Expert", specialty: "Asian Geopolitics & Financial Markets", rep: 0.92 }
+      { 
+        id: 0, 
+        name: "CN_Macro", 
+        specialty: "Chinese Macro & Monetary Policy", 
+        rep: 0.85,
+        walletAddress: "0x71C7656EC7ab88b098defB751B7401B5f6d1476B"
+      },
+      { 
+        id: 1, 
+        name: "Generic_AI", 
+        specialty: "General Purpose Translation & Markets", 
+        rep: 0.60,
+        walletAddress: "0x2195f51119A31F758e5fA215dD9821d7bC12F8AC"
+      },
+      { 
+        id: 2, 
+        name: "Asia_Expert", 
+        specialty: "Asian Geopolitics & Financial Markets", 
+        rep: 0.92,
+        walletAddress: "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1"
+      }
     ];
 
     let newsFeed = [];
     let selectedNewsIndex = 0;
-
-    // Leaderboard state (persisted in localStorage)
-    let leaderboard = {
-      CN_Macro: { wins: 0, points: 0, usdc: 0 },
-      Generic_AI: { wins: 0, points: 0, usdc: 0 },
-      Asia_Expert: { wins: 0, points: 0, usdc: 0 }
-    };
 
     // DOM Elements
     const newsSelect = document.getElementById('news-select');
@@ -935,6 +1079,7 @@
     const winnerMarketTags = document.getElementById('winner-market-tags');
     const winnerConfidenceVal = document.getElementById('winner-confidence-val');
     const winnerConfidenceFill = document.getElementById('winner-confidence-fill');
+    const winnerContractWallet = document.getElementById('winner-contract-wallet');
 
     // Update terminal clock (UTC)
     function updateClock() {
@@ -959,6 +1104,27 @@
       logStream.innerHTML = `<span class="time">[${hours}:${minutes}:${seconds}]</span> ${message}`;
     }
 
+    // Shorten wallet addresses helper
+    function formatWallet(address) {
+      return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+    }
+
+    // Copy to clipboard helper
+    function copyAddress(address, agentName, btnElement) {
+      navigator.clipboard.writeText(address).then(() => {
+        const originalText = btnElement.textContent;
+        btnElement.textContent = "COPIED!";
+        btnElement.style.color = "var(--terminal-green)";
+        printSystemLog(`[WALLET] Copied wallet address for ${agentName}: ${address}`);
+        setTimeout(() => {
+          btnElement.textContent = originalText;
+          btnElement.style.color = "var(--terminal-cyan)";
+        }, 1200);
+      }).catch(err => {
+        console.error('Failed to copy: ', err);
+      });
+    }
+
     // Render Agent Columns initially
     function initAgentColumns() {
       const container = document.getElementById('agent-columns');
@@ -967,6 +1133,7 @@
         const card = document.createElement('div');
         card.className = 'agent-card';
         card.id = `agent-card-${agent.id}`;
+        
         card.innerHTML = `
           <div class="winner-badge">WINNER</div>
           <div class="agent-header">
@@ -974,6 +1141,12 @@
             <div class="agent-name">${agent.name}</div>
             <div class="agent-spec">${agent.specialty}</div>
           </div>
+          
+          <div class="agent-wallet-row">
+            <span>ADDR: <span class="wallet-addr" title="Full Address: ${agent.walletAddress}">${formatWallet(agent.walletAddress)}</span></span>
+            <button class="btn-copy" onclick="copyAddress('${agent.walletAddress}', '${agent.name}', this)">[COPY]</button>
+          </div>
+
           <div class="agent-stats">
             <div class="stat-box">
               <span class="stat-label">REPUTATION</span>
@@ -988,13 +1161,19 @@
               <span class="stat-value" id="agent-conf-${agent.id}">---</span>
             </div>
             <div class="stat-box">
-              <span class="stat-label">FINAL SCORE</span>
+              <span class="stat-label">QUALITY SCORE</span>
               <span class="stat-value" id="agent-score-${agent.id}">---</span>
             </div>
           </div>
+          
+          <div class="agent-wallet-row" style="border-top: 1px solid var(--border-color-dim); margin-top: 0.5rem; justify-content: space-between;">
+            <span class="stat-label" style="font-size: 0.65rem;">QUALIFICATION</span>
+            <span id="agent-status-${agent.id}" style="font-weight: bold; font-size: 0.7rem; color: #6b7280;">STANDBY</span>
+          </div>
+
           <div class="score-telemetry">
             <div class="score-telemetry-header">
-              <span>WEIGHTED RESOLUTION SCORE</span>
+              <span>TRANSLATION QUALITY</span>
               <span class="score-telemetry-value" id="agent-telemetry-val-${agent.id}">0.0000</span>
             </div>
             <div class="score-bar-container">
@@ -1006,43 +1185,28 @@
       });
     }
 
-    // Leaderboard Management
-    function loadLeaderboard() {
-      const stored = localStorage.getItem('translation_arena_leaderboard');
-      if (stored) {
-        try {
-          leaderboard = JSON.parse(stored);
-          // Check if it matches structure (handles schema updates)
-          AGENTS_LIST.forEach(a => {
-            if (!leaderboard[a.name]) {
-              leaderboard[a.name] = { wins: 0, points: 0, usdc: 0 };
-            }
-          });
-        } catch (e) {
-          console.error("Failed parsing leaderboard", e);
-        }
+    // Leaderboard Management via Database
+    async function fetchLeaderboard() {
+      try {
+        const res = await fetch('/api/leaderboard');
+        if (!res.ok) throw new Error("Leaderboard load failed");
+        const data = await res.json();
+        renderLeaderboard(data);
+      } catch (err) {
+        console.error(err);
+        printSystemLog("Error fetching leaderboard database standings.");
       }
-      renderLeaderboard();
     }
 
-    function saveLeaderboard() {
-      localStorage.setItem('translation_arena_leaderboard', JSON.stringify(leaderboard));
-    }
-
-    function renderLeaderboard() {
-      // Sort agents by total points descending
-      const sorted = AGENTS_LIST.map(a => ({
-        name: a.name,
-        ...leaderboard[a.name]
-      })).sort((x, y) => y.points - x.points);
-
+    function renderLeaderboard(data) {
       leaderboardBody.innerHTML = '';
-      sorted.forEach((agent, index) => {
+      data.forEach((agent, index) => {
         const row = document.createElement('tr');
         row.className = `leaderboard-row-${index}`;
         row.innerHTML = `
           <td class="rank-cell">#0${index + 1}</td>
           <td class="agent-cell">${agent.name}</td>
+          <td class="wallet-cell" title="Full Address: ${agent.walletAddress}">${formatWallet(agent.walletAddress)}</td>
           <td class="numeric-cell">${agent.wins}</td>
           <td class="numeric-cell" style="font-weight: bold;">${agent.points}</td>
           <td class="numeric-cell highlight-usdc">$${agent.usdc} USDC</td>
@@ -1051,26 +1215,63 @@
       });
     }
 
-    function updateLeaderboardStats(winnerName, pointsGained, royaltyUsdc) {
-      if (leaderboard[winnerName]) {
-        leaderboard[winnerName].wins += 1;
-        leaderboard[winnerName].points += pointsGained;
-        leaderboard[winnerName].usdc += royaltyUsdc;
-        saveLeaderboard();
-        renderLeaderboard();
+    // Contract History Ledger Management via Database
+    async function fetchHistory() {
+      try {
+        const res = await fetch('/api/history');
+        if (!res.ok) throw new Error("History load failed");
+        const historyData = await res.json();
+        renderHistory(historyData);
+      } catch (err) {
+        console.error(err);
+        printSystemLog("Error fetching recent contract transaction ledger.");
       }
     }
 
-    // Reset leaderboard statistics
-    resetStatsBtn.addEventListener('click', () => {
-      if (confirm("Confirm reset of all persistent agent simulator stats?")) {
-        leaderboard = {
-          CN_Macro: { wins: 0, points: 0, usdc: 0 },
-          Generic_AI: { wins: 0, points: 0, usdc: 0 },
-          Asia_Expert: { wins: 0, points: 0, usdc: 0 }
-        };
-        saveLeaderboard();
-        printSystemLog("Leaderboard stats reset to 0 by system administrator.");
+    function renderHistory(data) {
+      const historyBody = document.getElementById('history-body');
+      if (data.length === 0) {
+        historyBody.innerHTML = `<tr><td colspan="6" class="empty-history">No resolved contracts recorded in ledger yet.</td></tr>`;
+        return;
+      }
+      historyBody.innerHTML = '';
+      data.forEach((tx) => {
+        // Parse database local date
+        const date = new Date(tx.timestamp);
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const hours = String(date.getUTCHours()).padStart(2, '0');
+        const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+        const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+        const timeStr = `${year}-${month}-${day} ${hours}:${minutes}:${seconds} UTC`;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="tx-cell">TX#${String(tx.id).padStart(4, '0')}</td>
+          <td class="time-cell">${timeStr}</td>
+          <td>News Feed Index #${tx.newsIndex}</td>
+          <td class="winner-cell-hist">${tx.winnerName}</td>
+          <td class="numeric-cell highlight-usdc">$${tx.royaltyUsdc} USDC</td>
+          <td class="status-cell"><span class="confirmed-badge">[CONFIRMED]</span></td>
+        `;
+        historyBody.appendChild(row);
+      });
+    }
+
+    // Clear database tables
+    resetStatsBtn.addEventListener('click', async () => {
+      if (confirm("Confirm clear of all persistent contract ledger and database stats?")) {
+        try {
+          const res = await fetch('/api/reset', { method: 'POST' });
+          if (!res.ok) throw new Error("Reset request failed");
+          printSystemLog("CypherLexicon database tables reset successfully.");
+          await fetchLeaderboard();
+          await fetchHistory();
+        } catch (err) {
+          console.error(err);
+          printSystemLog("Error resetting CypherLexicon database.");
+        }
       }
     });
 
@@ -1139,9 +1340,13 @@
         document.getElementById(`agent-score-${id}`).textContent = '---';
         document.getElementById(`agent-telemetry-val-${id}`).textContent = '0.0000';
         document.getElementById(`agent-bar-fill-${id}`).style.width = '0%';
+        
+        const statusEl = document.getElementById(`agent-status-${id}`);
+        statusEl.textContent = 'PENDING...';
+        statusEl.style.color = 'var(--terminal-amber)';
       }
 
-      printSystemLog(`Initiated auction request for news feed item #${selectedNewsIndex}...`);
+      printSystemLog(`Initiated contract auction transaction for news item #${selectedNewsIndex}...`);
 
       try {
         const res = await fetch('/api/auction', {
@@ -1156,12 +1361,11 @@
 
         const data = await res.json();
         
-        // Render results with delay simulation or direct calculations
-        // The scores are returned, let's display them
-        auctionStatus.textContent = "COMPUTING SCORES...";
+        // Render results with delay simulation
+        auctionStatus.textContent = "COMMITTING TRANSACTION...";
         auctionStatus.className = "auction-status";
         
-        setTimeout(() => {
+        setTimeout(async () => {
           // Reveal stats and trigger score bar transitions
           data.agents.forEach((agentResult, idx) => {
             document.getElementById(`agent-bid-${idx}`).textContent = `$${agentResult.bid}`;
@@ -1169,10 +1373,17 @@
             document.getElementById(`agent-score-${idx}`).textContent = agentResult.score.toFixed(4);
             document.getElementById(`agent-telemetry-val-${idx}`).textContent = agentResult.score.toFixed(4);
             
-            // Score progress bar filling (score is 0-1 theoretically, we convert to %)
-            // Max score is 1.0, let's set width
             const scorePercent = Math.min(Math.max(agentResult.score * 100, 0), 100);
             document.getElementById(`agent-bar-fill-${idx}`).style.width = `${scorePercent}%`;
+
+            const statusEl = document.getElementById(`agent-status-${idx}`);
+            if (agentResult.isQualified) {
+              statusEl.textContent = 'QUALIFIED';
+              statusEl.style.color = 'var(--terminal-green)';
+            } else {
+              statusEl.textContent = 'DISQUALIFIED';
+              statusEl.style.color = 'var(--terminal-red)';
+            }
           });
 
           // Highlight Winner Card
@@ -1182,9 +1393,10 @@
           winnerCard.classList.add('winner');
 
           // Reveal winning market contract card at bottom after 400ms
-          setTimeout(() => {
+          setTimeout(async () => {
             winnerMarketTitle.textContent = winner.response.title;
             winnerMarketCriteria.textContent = winner.response.resolution_criteria;
+            winnerContractWallet.innerHTML = `<span class="wallet-addr" title="Full Creator Wallet: ${winner.walletAddress}">${winner.walletAddress}</span>`;
             
             // Build tags
             winnerMarketTags.innerHTML = '';
@@ -1202,13 +1414,14 @@
 
             winningCardContainer.classList.add('visible');
             
-            // Update leaderboard & persist
-            updateLeaderboardStats(winner.name, data.points_gained, data.royalty_usdc);
+            // Update leaderboard & recent history live from backend database
+            await fetchLeaderboard();
+            await fetchHistory();
 
-            auctionStatus.textContent = "AUCTION RESOLVED";
+            auctionStatus.textContent = "CONTRACT DEPLOYED";
             auctionStatus.style.color = "var(--terminal-green)";
             
-            printSystemLog(`Auction finished. Agent [${winner.name}] won with Score: ${winner.score}. Awarded +${data.points_gained} PTS, +$${data.royalty_usdc} USDC royalty.`);
+            printSystemLog(`Contract deployed. Agent [${winner.name}] registered as contract owner. Payout of +$${data.royalty_usdc} USDC royalty finalized.`);
             runButton.disabled = false;
           }, 400);
 
@@ -1216,18 +1429,22 @@
 
       } catch (err) {
         console.error("Auction failure:", err);
-        auctionStatus.textContent = "AUCTION FAILED";
+        auctionStatus.textContent = "TRANSACTION REJECTED";
         auctionStatus.className = "auction-status";
         auctionStatus.style.color = "var(--terminal-red)";
-        printSystemLog(`Critical failure in processing transaction auction: ${err.message}`);
+        printSystemLog(`Critical smart contract verification failure: ${err.message}`);
         runButton.disabled = false;
       }
     });
 
+    // Make copyAddress global
+    window.copyAddress = copyAddress;
+
     // Main initializers
     initAgentColumns();
-    loadLeaderboard();
     loadNewsFeed();
+    fetchLeaderboard();
+    fetchHistory();
   </script>
 </body>
 </html>
