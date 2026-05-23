@@ -2,7 +2,6 @@ import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import Anthropic from '@anthropic-ai/sdk';
 import { OpenRouter } from '@openrouter/sdk';
 import pkg from 'pg';
 
@@ -113,18 +112,6 @@ async function initDb() {
     client.release();
   }
 }
-
-// Initialize Anthropic Client (Translators)
-const apiKey = process.env.ANTHROPIC_API_KEY;
-const hasApiKey = apiKey && apiKey !== 'your_key_here' && apiKey.trim() !== '';
-
-if (hasApiKey) {
-  console.log("⚡ Anthropic API key detected. Translators active with Claude 3.5 Sonnet.");
-} else {
-  console.log("⚠️ No valid ANTHROPIC_API_KEY found. Translators running in mockup fallback mode.");
-}
-
-const anthropic = hasApiKey ? new Anthropic({ apiKey }) : null;
 
 // Initialize OpenRouter Client (Auditor)
 const openRouterKey = process.env.OPENROUTER_API_KEY;
@@ -319,45 +306,10 @@ app.post('/api/auction', async (req: Request, res: Response) => {
     const newsItem = news[newsIndex];
     console.log(`\n--- Running CypherLexicon Auction for News [${newsIndex}]: "${newsItem.zh}" ---`);
 
-    // 1. Run all 3 Claude API calls or mockups in parallel (independent agent submissions)
+    // 1. Run all 3 agent translation submissions in parallel (simulating separate independent user inputs)
     const agentPromises = agents.map(async (agent): Promise<AgentResult> => {
       const bid = Math.floor(Math.random() * (1000 - 100 + 1)) + 100;
-      let responseData: any = null;
-      let usedFallback = false;
-
-      const userMsg = `Translate this news into a prediction market question. Return JSON with fields: title (string), resolution_criteria (string), tags (array of strings), confidence_score (number 0-1). News: ${newsItem.zh} (${newsItem.hint})`;
-
-      if (hasApiKey && anthropic) {
-        try {
-          console.log(`[API Call] Sending request for Agent ${agent.name}...`);
-          const response = await anthropic.messages.create({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 1000,
-            system: agent.systemPrompt,
-            messages: [
-              { role: 'user', content: userMsg }
-            ]
-          });
-          
-          const block = response.content[0];
-          if (block.type === 'text') {
-            const rawText = block.text;
-            responseData = cleanJSON(rawText);
-          } else {
-            throw new Error("Unexpected response block type from Claude");
-          }
-          console.log(`[API Call] Agent ${agent.name} responded successfully.`);
-        } catch (err: any) {
-          console.warn(`[Fallback] Claude API error for Agent ${agent.name}:`, err.message);
-          usedFallback = true;
-        }
-      } else {
-        usedFallback = true;
-      }
-
-      if (usedFallback) {
-        responseData = fallbackResponses[newsIndex][agent.id];
-      }
+      const responseData = fallbackResponses[newsIndex][agent.id];
 
       // Safeguard structure and inputs
       const parsedResponse: AgentResponse = {
