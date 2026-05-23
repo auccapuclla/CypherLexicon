@@ -1171,6 +1171,12 @@
             <span id="agent-status-${agent.id}" style="font-weight: bold; font-size: 0.7rem; color: #6b7280;">STANDBY</span>
           </div>
 
+          <!-- Auditor Critique Row -->
+          <div class="news-display-card" style="margin-top: 0.5rem; padding: 0.6rem; border: 1px dashed rgba(255,255,255,0.06); font-size: 0.7rem; background: rgba(0,0,0,0.15);">
+            <div style="font-weight: bold; color: var(--terminal-cyan); margin-bottom: 0.25rem; font-size: 0.6rem; text-transform: uppercase;">Oracle Audit Critique:</div>
+            <div id="agent-feedback-${agent.id}" style="color: #9ca3af; line-height: 1.3; font-style: italic;">Awaiting audit result...</div>
+          </div>
+
           <div class="score-telemetry">
             <div class="score-telemetry-header">
               <span>TRANSLATION QUALITY</span>
@@ -1344,6 +1350,8 @@
         const statusEl = document.getElementById(`agent-status-${id}`);
         statusEl.textContent = 'PENDING...';
         statusEl.style.color = 'var(--terminal-amber)';
+
+        document.getElementById(`agent-feedback-${id}`).textContent = 'Awaiting audit result...';
       }
 
       printSystemLog(`Initiated contract auction transaction for news item #${selectedNewsIndex}...`);
@@ -1375,7 +1383,7 @@
             
             const scorePercent = Math.min(Math.max(agentResult.score * 100, 0), 100);
             document.getElementById(`agent-bar-fill-${idx}`).style.width = `${scorePercent}%`;
-
+            
             const statusEl = document.getElementById(`agent-status-${idx}`);
             if (agentResult.isQualified) {
               statusEl.textContent = 'QUALIFIED';
@@ -1384,7 +1392,10 @@
               statusEl.textContent = 'DISQUALIFIED';
               statusEl.style.color = 'var(--terminal-red)';
             }
+
+            document.getElementById(`agent-feedback-${idx}`).textContent = agentResult.auditorFeedback;
           });
+        }, 800);
 
           // Highlight Winner Card
           const winnerIndex = data.winner_index;

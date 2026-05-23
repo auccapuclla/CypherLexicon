@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import Anthropic from '@anthropic-ai/sdk';
+import { OpenRouter } from '@openrouter/sdk';
 import pkg from 'pg';
 
 import news from './news.js';
@@ -29,13 +30,9 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Initialize PostgreSQL Pool
-const connectionString = process.env.DATABASE_URL || 
-  (process.env.DB_USER && process.env.DB_PASSWORD && process.env.DB_NAME
-    ? `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '5432'}/${process.env.DB_NAME}`
-    : undefined);
-
+const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
-  console.error("❌ Missing DATABASE_URL or DB credentials (DB_USER, DB_PASSWORD, DB_NAME) in environment variables.");
+  console.error("❌ Missing DATABASE_URL in environment variables.");
   process.exit(1);
 }
 
@@ -84,6 +81,11 @@ async function initDb() {
       );
     `);
 
+    // Add migration for auditor_feedback column
+    await client.query(`
+      ALTER TABLE bids ADD COLUMN IF NOT EXISTS auditor_feedback TEXT;
+    `);
+
     // Seed agents table if empty
     const res = await client.query('SELECT COUNT(*) as count FROM agents');
     const count = parseInt(res.rows[0].count, 10);
@@ -112,17 +114,29 @@ async function initDb() {
   }
 }
 
-// Initialize Anthropic client
+// Initialize Anthropic Client (Translators)
 const apiKey = process.env.ANTHROPIC_API_KEY;
 const hasApiKey = apiKey && apiKey !== 'your_key_here' && apiKey.trim() !== '';
 
 if (hasApiKey) {
-  console.log("⚡ Anthropic API key detected. Running in live mode with Claude 3.5 Sonnet.");
+  console.log("⚡ Anthropic API key detected. Translators active with Claude 3.5 Sonnet.");
 } else {
-  console.log("⚠️ No valid ANTHROPIC_API_KEY found. Running in mockup fallback mode.");
+  console.log("⚠️ No valid ANTHROPIC_API_KEY found. Translators running in mockup fallback mode.");
 }
 
 const anthropic = hasApiKey ? new Anthropic({ apiKey }) : null;
+
+// Initialize OpenRouter Client (Auditor)
+const openRouterKey = process.env.OPENROUTER_API_KEY;
+const hasOpenRouterKey = openRouterKey && openRouterKey !== 'your_openrouter_key_here' && openRouterKey.trim() !== '';
+
+if (hasOpenRouterKey) {
+  console.log("🔍 OpenRouter API key detected. Auditor active with DeepSeek (deepseek-v4-flash).");
+} else {
+  console.log("⚠️ No OpenRouter API key found. Auditor running in local fallback mode.");
+}
+
+const openrouter = hasOpenRouterKey ? new OpenRouter({ apiKey: openRouterKey }) : null;
 
 // JSON cleaner to strip markdown code blocks
 function cleanJSON(raw: string): any {
@@ -144,8 +158,148 @@ interface AgentResult {
   score: number;
   quality: number;
   isQualified: boolean;
+  auditorFeedback: string;
   response: AgentResponse;
   walletAddress: string;
+}
+
+interface AuditEvaluation {
+  agent_id: number;
+  score: number;
+  feedback: string;
+}
+
+interface AuditResult {
+  evaluations: AuditEvaluation[];
+}
+
+// DeepSeek Auditor Prompt caller
+async function auditTranslations(
+  newsItem: { zh: string; hint: string; source: string },
+  proposals: { id: number; name: string; title: string; criteria: string; tags: string[] }[]
+): Promise<AuditResult> {
+  if (!openrouter) {
+    throw new Error("OpenRouter client not initialized");
+  }
+
+  const prompt = `
+You are the official CypherLexicon independent oracle auditor. Your task is to evaluate 3 proposed prediction market contracts translated from a non-English news headline by different independent AI agents.
+
+Original News Headline: "${newsItem.zh}"
+English Meaning/Context: "${newsItem.hint}"
+Source Publisher: "${newsItem.source}"
+
+Here are the 3 proposed translation contracts:
+
+${proposals.map(p => `
+[AGENT ID: ${p.id} // Name: ${p.name}]
+- Proposed Title: "${p.title}"
+- Proposed Resolution Criteria: "${p.criteria}"
+- Proposed Tags: ${JSON.stringify(p.tags)}
+`).join('\n')}
+
+Evaluate each agent's proposal on a scale of 0.0 to 1.0 based on:
+1. Accuracy: Does the proposed title faithfully represent the macroeconomic facts in the source headline?
+2. Specificity and Resolvability: Are the resolution criteria clear, objective, and free of ambiguity? Does it define specific deadlines/timestamps and official sources of truth to resolve the contract?
+
+Always respond with valid JSON only, no markdown formatting block, matching this exact structure:
+{
+  "evaluations": [
+    {
+      "agent_id": 0,
+      "score": 0.85,
+      "feedback": "Write a 1-sentence critique explaining the grade."
+    },
+    {
+      "agent_id": 1,
+      "score": 0.60,
+      "feedback": "Write a 1-sentence critique explaining the grade."
+    },
+    {
+      "agent_id": 2,
+      "score": 0.92,
+      "feedback": "Write a 1-sentence critique explaining the grade."
+    }
+  ]
+}
+`;
+
+  const models = ["deepseek/deepseek-v4-flash:free", "deepseek/deepseek-v4-flash"];
+  let responseText = "";
+  let success = false;
+  let errorMsg = "";
+
+  for (const model of models) {
+    console.log(`[Auditor] Sending audit request to ${model} via OpenRouter (streaming)...`);
+    try {
+      const stream = await (openrouter as any).chat.send({
+        chatRequest: {
+          model: model,
+          messages: [
+            { role: "user", content: prompt }
+          ],
+          stream: true
+        }
+      });
+
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content;
+        if (content) {
+          responseText += content;
+          process.stdout.write(content);
+        }
+
+        const usage = chunk.usage;
+        if (usage) {
+          const reasoning = usage.completionTokensDetails?.reasoningTokens ?? usage.reasoningTokens;
+          console.log(`\n[Auditor - ${model}] Usage stats:`, {
+            promptTokens: usage.promptTokens,
+            completionTokens: usage.completionTokens,
+            totalTokens: usage.totalTokens,
+            reasoningTokens: reasoning
+          });
+        }
+      }
+      console.log("\n");
+      success = true;
+      break;
+    } catch (err: any) {
+      console.warn(`[Auditor - ${model} Warning] Attempt failed:`, err.message);
+      errorMsg = err.message;
+    }
+  }
+
+  if (!success) {
+    throw new Error(`All auditor models failed. Last error: ${errorMsg}`);
+  }
+
+  console.log("[Auditor] DeepSeek responded. Parsing audit findings...");
+  return cleanJSON(responseText);
+}
+
+// Local fallback evaluation in case OpenRouter fails
+function getFallbackAudit(results: any[]): AuditResult {
+  console.log("[Auditor Fallback] Applying local fallback audit rating.");
+  return {
+    evaluations: results.map(r => {
+      // Quality score is computed locally as: rep * confidence
+      const quality = r.rep * r.response.confidence_score;
+      const score = Math.round(quality * 10000) / 10000;
+      let feedback = "";
+      if (score >= 0.75) {
+        feedback = "Solid translation; resolution details specify clear official sources.";
+      } else if (score >= 0.65) {
+        feedback = "Acceptable translation, though target deadlines could be more specific.";
+      } else {
+        feedback = "Low quality match; translation contains ambiguity and lacks resolution sources.";
+      }
+      return {
+        agent_id: r.id,
+        score,
+        feedback
+      };
+    })
+  };
 }
 
 // Serve news feed
@@ -165,7 +319,7 @@ app.post('/api/auction', async (req: Request, res: Response) => {
     const newsItem = news[newsIndex];
     console.log(`\n--- Running CypherLexicon Auction for News [${newsIndex}]: "${newsItem.zh}" ---`);
 
-    // Run all 3 Claude API calls or mockups in parallel
+    // 1. Run all 3 Claude API calls or mockups in parallel (independent agent submissions)
     const agentPromises = agents.map(async (agent): Promise<AgentResult> => {
       const bid = Math.floor(Math.random() * (1000 - 100 + 1)) + 100;
       let responseData: any = null;
@@ -224,6 +378,7 @@ app.post('/api/auction', async (req: Request, res: Response) => {
         score,
         quality,
         isQualified,
+        auditorFeedback: "[PENDING AUDIT]",
         response: parsedResponse,
         walletAddress: agent.walletAddress
       };
@@ -231,7 +386,41 @@ app.post('/api/auction', async (req: Request, res: Response) => {
 
     const results = await Promise.all(agentPromises);
 
-    // Determine the winning agent (Quality-First Selection)
+    // 2. Perform third-party DeepSeek Auditing via OpenRouter
+    let auditResult: AuditResult;
+    if (hasOpenRouterKey && openrouter) {
+      try {
+        const proposalsForAudit = results.map(r => ({
+          id: r.id,
+          name: r.name,
+          title: r.response.title,
+          criteria: r.response.resolution_criteria,
+          tags: r.response.tags
+        }));
+        
+        auditResult = await auditTranslations(newsItem, proposalsForAudit);
+      } catch (err: any) {
+        console.warn("[Auditor Error] DeepSeek auditing failed. Using fallback:", err.message);
+        auditResult = getFallbackAudit(results);
+      }
+    } else {
+      auditResult = getFallbackAudit(results);
+    }
+
+    // 3. Map audit evaluations back to agent results
+    results.forEach(r => {
+      const evalData = auditResult.evaluations.find(e => e.agent_id === r.id);
+      if (evalData) {
+        r.score = evalData.score;
+        r.quality = evalData.score;
+        r.isQualified = evalData.score >= 0.65;
+        r.auditorFeedback = evalData.feedback;
+      } else {
+        r.auditorFeedback = "[OFFLINE AUDIT] Rating node mismatch.";
+      }
+    });
+
+    // 4. Determine the winning agent (Quality-First Selection)
     const qualified = results.filter(r => r.isQualified);
     let winnerIndex = 0;
 
@@ -276,14 +465,15 @@ app.post('/api/auction', async (req: Request, res: Response) => {
 
       for (const r of results) {
         await client.query(`
-          INSERT INTO bids (auction_id, agent_id, bid_value, confidence_score, score, title, resolution_criteria, tags)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          INSERT INTO bids (auction_id, agent_id, bid_value, confidence_score, score, auditor_feedback, title, resolution_criteria, tags)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         `, [
           auctionId,
           r.id,
           r.bid,
           r.response.confidence_score,
           r.score,
+          r.auditorFeedback,
           r.response.title,
           r.response.resolution_criteria,
           r.response.tags.join(',')
@@ -299,7 +489,7 @@ app.post('/api/auction', async (req: Request, res: Response) => {
     }
     // ----------------------------------------------------
 
-    console.log(`Auction winner: Agent ${winnerIndex} (${winner.name}) | Score: ${winner.score} | Bid: ${winner.bid}`);
+    console.log(`Auction winner: Agent ${winnerIndex} (${winner.name}) | Quality: ${winner.score} | Bid: ${winner.bid}`);
 
     res.json({
       agents: results,
