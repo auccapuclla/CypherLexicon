@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Translation Arena — AI Agent Prediction Market Hackathon</title>
+  <!-- Google Fonts: JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-color: #030712;
+      --card-bg: rgba(17, 24, 39, 0.7);
+      --terminal-green: #10B981;
+      --terminal-green-dim: #065F46;
+      --terminal-green-glow: rgba(16, 185, 129, 0.25);
+      --terminal-cyan: #06B6D4;
+      --terminal-cyan-dim: #155E75;
+      --terminal-cyan-glow: rgba(6, 182, 212, 0.25);
+      --terminal-amber: #F59E0B;
+      --terminal-red: #EF4444;
+      --border-color: rgba(16, 185, 129, 0.15);
+      --border-color-dim: rgba(255, 255, 255, 0.05);
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      /* Subtle scanline and grid pattern */
+      background-image: 
+        linear-gradient(rgba(16, 185, 129, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 185, 129, 0.02) 1px, transparent 1px),
+        linear-gradient(rgba(0, 0, 0, 0.3) 50%, rgba(255, 255, 255, 0.02) 50%);
+      background-size: 30px 30px, 30px 30px, 100% 4px;
+      color: #e5e7eb;
+      font-family: var(--font-mono);
+      min-height: 100vh;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Top Bar Header */
+    header {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 1.25rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--terminal-green);
+    }
+
+    .header-title-section h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.05em;
+      text-shadow: 0 0 10px var(--terminal-green-glow);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .header-title-section h1 span.accent {
+      color: var(--terminal-green);
+    }
+
+    .header-title-section p {
+      font-size: 0.85rem;
+      color: #9ca3af;
+      margin-top: 0.25rem;
+    }
+
+    .system-telemetry {
+      text-align: right;
+      font-size: 0.75rem;
+      color: #6b7280;
+      line-height: 1.4;
+    }
+
+    .telemetry-row {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+    }
+
+    .telemetry-row span.green-pulse {
+      color: var(--terminal-green);
+      font-weight: bold;
+      animation: pulse 1.5s infinite;
+    }
+
+    /* Control Station: News Selector & Action Button */
+    .control-station {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .control-station {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .control-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .box-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--terminal-cyan);
+      border-bottom: 1px solid var(--border-color-dim);
+      padding-bottom: 0.5rem;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .box-title .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--terminal-cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--terminal-cyan);
+    }
+
+    .selector-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      text-transform: uppercase;
+    }
+
+    select {
+      background: #090d16;
+      border: 1px solid var(--border-color);
+      color: #ffffff;
+      padding: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    select:focus {
+      border-color: var(--terminal-cyan);
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.15);
+    }
+
+    /* Original News Display Card */
+    .news-display-card {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px dashed var(--border-color-dim);
+      border-radius: 4px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .news-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+    }
+
+    .lang-badge {
+      background: var(--terminal-cyan-dim);
+      color: #ffffff;
+      padding: 0.15rem 0.4rem;
+      border-radius: 2px;
+      font-weight: bold;
+      border: 1px solid var(--terminal-cyan);
+    }
+
+    .source-badge {
+      color: #9ca3af;
+      font-weight: bold;
+    }
+
+    .original-text {
+      font-size: 1.1rem;
+      color: #ffffff;
+      line-height: 1.4;
+      border-left: 2px solid var(--terminal-cyan);
+      padding-left: 0.75rem;
+    }
+
+    .english-hint {
+      font-size: 0.85rem;
+      color: #9ca3af;
+      font-style: italic;
+    }
+
+    /* Action Trigger Pane */
+    .action-pane {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 1.5rem;
+      backdrop-filter: blur(10px);
+      text-align: center;
+    }
+
+    .btn-run {
+      background: transparent;
+      border: 1px solid var(--terminal-green);
+      color: var(--terminal-green);
+      font-family: var(--font-mono);
+      font-size: 1.2rem;
+      font-weight: 700;
+      padding: 1.25rem 2rem;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
+    }
+
+    .btn-run:hover:not(:disabled) {
+      background: var(--terminal-green);
+      color: var(--bg-color);
+      box-shadow: 0 0 25px var(--terminal-green-glow);
+    }
+
+    .btn-run:disabled {
+      border-color: #4b5563;
+      color: #4b5563;
+      cursor: not-allowed;
+    }
+
+    .auction-status {
+      font-size: 0.85rem;
+      color: var(--terminal-amber);
+      font-weight: bold;
+      min-height: 20px;
+    }
+
+    /* Blinking text animation */
+    .blinking-cursor::after {
+      content: "█";
+      animation: cursor-blink 800ms infinite;
+    }
+
+    /* Agent Race Grid (3 Columns) */
+    .agent-race-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .agent-columns {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .agent-columns {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .agent-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color-dim);
+      border-radius: 4px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+
+    .agent-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Hover effect for agent cards */
+    .agent-card:hover {
+      border-color: rgba(6, 182, 212, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    }
+
+    .agent-card.winner {
+      border-color: var(--terminal-green);
+      box-shadow: 0 0 25px var(--terminal-green-glow);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .agent-card.winner::after {
+      background: var(--terminal-green);
+      height: 4px;
+    }
+
+    /* Winner badge styling */
+    .winner-badge {
+      display: none;
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: var(--terminal-green);
+      color: var(--bg-color);
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 0.15rem 0.4rem;
+      border-radius: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+    }
+
+    .agent-card.winner .winner-badge {
+      display: block;
+      animation: pulse 1.5s infinite;
+    }
+
+    .agent-header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .agent-id {
+      font-size: 0.65rem;
+      color: #6b7280;
+      letter-spacing: 0.1em;
+    }
+
+    .agent-name {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .agent-spec {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      font-style: italic;
+      line-height: 1.3;
+    }
+
+    .agent-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem 1rem;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.03);
+      padding: 0.75rem;
+      border-radius: 4px;
+    }
+
+    .stat-box {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .stat-label {
+      font-size: 0.65rem;
+      color: #6b7280;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #f3f4f6;
+    }
+
+    .stat-value.cyan {
+      color: var(--terminal-cyan);
+    }
+
+    .score-telemetry {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .score-telemetry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+
+    .score-telemetry-value {
+      font-weight: bold;
+      color: var(--terminal-cyan);
+    }
+
+    .agent-card.winner .score-telemetry-value {
+      color: var(--terminal-green);
+    }
+
+    .score-bar-container {
+      width: 100%;
+      height: 8px;
+      background: #090d16;
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--terminal-cyan);
+      box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+      transition: width 600ms cubic-bezier(0.1, 0.8, 0.25, 1);
+    }
+
+    .agent-card.winner .score-bar-fill {
+      background: var(--terminal-green);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+    }
+
+    /* Result Panel & Persistent Leaderboard (2 Columns) */
+    .bottom-dashboard {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .bottom-dashboard {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Winning Market Card */
+    .winning-card-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      opacity: 0;
+      transform: translateY(15px);
+      transition: opacity 500ms cubic-bezier(0.16, 1, 0.3, 1), 
+                  transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+
+    .winning-card-container.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+    }
+
+    .winner-headline-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: var(--terminal-green);
+    }
+
+    .winner-headline-banner .arrow {
+      animation: pulse 1s infinite alternate;
+    }
+
+    .market-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, rgba(17, 24, 39, 0.8) 100%);
+      border: 1px solid var(--terminal-green);
+      border-radius: 4px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 15px rgba(16, 185, 129, 0.05);
+      position: relative;
+    }
+
+    .market-card::before {
+      content: 'POLYMARKET CONTRACT SPEC';
+      position: absolute;
+      top: -0.5rem;
+      left: 1.5rem;
+      background: var(--bg-color);
+      border: 1px solid var(--terminal-green);
+      padding: 0 0.5rem;
+      font-size: 0.6rem;
+      font-weight: bold;
+      color: var(--terminal-green);
+      letter-spacing: 0.1em;
+    }
+
+    .market-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.4;
+      margin-top: 0.25rem;
+    }
+
+    .market-criteria {
+      font-size: 0.85rem;
+      color: #9ca3af;
+      line-height: 1.5;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 1rem;
+      border-radius: 4px;
+      border-left: 2px solid var(--terminal-green-dim);
+    }
+
+    .market-footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 1rem;
+    }
+
+    .market-tags {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .market-tag {
+      font-size: 0.65rem;
+      background: rgba(255, 255, 255, 0.05);
+      color: #9ca3af;
+      padding: 0.2rem 0.5rem;
+      border-radius: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      text-transform: uppercase;
+    }
+
+    .confidence-meter-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .confidence-val {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: var(--terminal-green);
+    }
+
+    .confidence-meter-bar {
+      width: 100px;
+      height: 6px;
+      background: #090d16;
+      border-radius: 3px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .confidence-meter-fill {
+      height: 100%;
+      background: var(--terminal-green);
+      box-shadow: 0 0 6px var(--terminal-green-glow);
+    }
+
+    /* Leaderboard Card */
+    .leaderboard-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 1.5rem;
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .leaderboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--terminal-cyan);
+      border-bottom: 1px solid var(--border-color-dim);
+      padding-bottom: 0.5rem;
+      font-weight: bold;
+    }
+
+    .btn-reset-stats {
+      background: transparent;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: var(--terminal-red);
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+    }
+
+    .btn-reset-stats:hover {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: var(--terminal-red);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    th {
+      color: #6b7280;
+      font-weight: normal;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+    }
+
+    td {
+      padding: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr.leaderboard-row-0 {
+      background: rgba(16, 185, 129, 0.03);
+      font-weight: bold;
+    }
+
+    tr.leaderboard-row-0 td.agent-cell {
+      color: var(--terminal-green);
+    }
+
+    .rank-cell {
+      color: #6b7280;
+      font-weight: bold;
+      width: 15%;
+    }
+
+    tr.leaderboard-row-0 .rank-cell {
+      color: var(--terminal-green);
+    }
+
+    .agent-cell {
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    .numeric-cell {
+      text-align: right;
+    }
+
+    .highlight-usdc {
+      color: var(--terminal-cyan);
+    }
+
+    .empty-leaderboard {
+      text-align: center;
+      color: #6b7280;
+      padding: 2rem 0;
+      font-style: italic;
+    }
+
+    /* Keyframes & Animations */
+    @keyframes cursor-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+
+    /* Notification log system (bottom-most row) */
+    .system-logs {
+      background: #02040a;
+      border: 1px solid var(--border-color-dim);
+      border-radius: 4px;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      color: #4b5563;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .system-logs .green-indicator {
+      width: 6px;
+      height: 6px;
+      background: var(--terminal-green);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--terminal-green);
+    }
+
+    .log-stream {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      color: #8b949e;
+    }
+
+    .log-stream span.time {
+      color: #4b5563;
+      margin-right: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Retro Terminal Header -->
+  <header>
+    <div class="header-title-section">
+      <h1>TRANSLATION <span class="accent">ARENA</span></h1>
+      <p>AI agent bidding & translation race for prediction market alpha</p>
+    </div>
+    <div class="system-telemetry">
+      <div class="telemetry-row">
+        <span>STATUS: </span><span class="green-pulse">ONLINE</span>
+      </div>
+      <div class="telemetry-row">
+        <span>TIME:</span><span id="utc-clock">2026-05-22 22:39:15 UTC</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- News Selection Box & Run Command Panel -->
+  <div class="control-station">
+    <div class="control-box">
+      <div class="box-title">
+        <span>NEWS SELECTOR PANEL</span>
+        <div class="dot"></div>
+      </div>
+      
+      <div class="selector-container">
+        <label for="news-select">SELECT NON-ENGLISH FEED ITEM</label>
+        <select id="news-select">
+          <!-- Populated by JavaScript -->
+        </select>
+      </div>
+
+      <!-- Displays details of the selected news item -->
+      <div class="news-display-card" id="news-display-card">
+        <div class="news-meta">
+          <span class="source-badge" id="news-source">SOURCE: ---</span>
+          <span class="lang-badge" id="news-lang">---</span>
+        </div>
+        <div class="original-text" id="news-original">---</div>
+        <div class="english-hint" id="news-hint">---</div>
+      </div>
+    </div>
+
+    <div class="action-pane">
+      <div class="box-title" style="width: 100%; text-align: left; justify-content: flex-start; gap: 0.5rem;">
+        <span style="color: var(--terminal-green)">AUCTION TRIGGER</span>
+        <div class="dot" style="background: var(--terminal-green); box-shadow: 0 0 8px var(--terminal-green);"></div>
+      </div>
+      <button class="btn-run" id="run-auction" disabled>RUN AUCTION</button>
+      <div class="auction-status" id="auction-status">INITIALIZING SYSTEM...</div>
+    </div>
+  </div>
+
+  <!-- Agent Competitor Grid (3 columns) -->
+  <div class="agent-race-section">
+    <div class="box-title" style="margin-bottom: 0.5rem;">
+      <span>AGENT ARENA COMPETITORS</span>
+      <div class="dot" style="background: var(--terminal-cyan); box-shadow: 0 0 8px var(--terminal-cyan);"></div>
+    </div>
+    <div class="agent-columns" id="agent-columns">
+      <!-- Agent cards generated dynamically to keep JS in sync, or static in html and manipulated via JS -->
+      <!-- We build them dynamically in JS based on our definition -->
+    </div>
+  </div>
+
+  <!-- Bottom Panel: Winner Card (Left) & Leaderboard (Right) -->
+  <div class="bottom-dashboard">
+    <!-- Left: Winning Market Card -->
+    <div class="winning-card-container" id="winning-card-container">
+      <div class="winner-headline-banner">
+        <span class="arrow">►</span>
+        <span>AUCTION FINALIZED: WINNING TRANSLATION RESOLVED</span>
+      </div>
+      
+      <div class="market-card">
+        <div class="market-title" id="winner-market-title">---</div>
+        <div class="market-criteria" id="winner-market-criteria">---</div>
+        <div class="market-footer">
+          <div class="market-tags" id="winner-market-tags">
+            <!-- Populated dynamically -->
+          </div>
+          <div class="confidence-meter-container">
+            <span class="confidence-val" id="winner-confidence-val">---</span>
+            <div class="confidence-meter-bar">
+              <div class="confidence-meter-fill" id="winner-confidence-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Leaderboard -->
+    <div class="leaderboard-container">
+      <div class="leaderboard-header">
+        <span>PERSISTENT STATS LEADERBOARD</span>
+        <button class="btn-reset-stats" id="btn-reset-stats">RESET STATS</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>RANK</th>
+            <th>AGENT NAME</th>
+            <th class="numeric-cell">WINS</th>
+            <th class="numeric-cell">TOTAL POINTS</th>
+            <th class="numeric-cell">EARNED (USDC)</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body">
+          <!-- Filled by JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Uptime and audit logs footer -->
+  <div class="system-logs">
+    <div class="green-indicator"></div>
+    <div class="log-stream" id="log-stream">
+      <span class="time">[17:39:15]</span> System Ready. Select feed item and initiate auction to simulate translator matches.
+    </div>
+  </div>
+
+  <script>
+    // System definitions loaded in frontend
+    const AGENTS_LIST = [
+      { id: 0, name: "CN_Macro", specialty: "Chinese Macro & Monetary Policy", rep: 0.85 },
+      { id: 1, name: "Generic_AI", specialty: "General Purpose Translation & Markets", rep: 0.60 },
+      { id: 2, name: "Asia_Expert", specialty: "Asian Geopolitics & Financial Markets", rep: 0.92 }
+    ];
+
+    let newsFeed = [];
+    let selectedNewsIndex = 0;
+
+    // Leaderboard state (persisted in localStorage)
+    let leaderboard = {
+      CN_Macro: { wins: 0, points: 0, usdc: 0 },
+      Generic_AI: { wins: 0, points: 0, usdc: 0 },
+      Asia_Expert: { wins: 0, points: 0, usdc: 0 }
+    };
+
+    // DOM Elements
+    const newsSelect = document.getElementById('news-select');
+    const runButton = document.getElementById('run-auction');
+    const auctionStatus = document.getElementById('auction-status');
+    const utcClock = document.getElementById('utc-clock');
+    const logStream = document.getElementById('log-stream');
+    const leaderboardBody = document.getElementById('leaderboard-body');
+    const resetStatsBtn = document.getElementById('btn-reset-stats');
+    
+    // News display elements
+    const newsSource = document.getElementById('news-source');
+    const newsLang = document.getElementById('news-lang');
+    const newsOriginal = document.getElementById('news-original');
+    const newsHint = document.getElementById('news-hint');
+    
+    // Winner elements
+    const winningCardContainer = document.getElementById('winning-card-container');
+    const winnerMarketTitle = document.getElementById('winner-market-title');
+    const winnerMarketCriteria = document.getElementById('winner-market-criteria');
+    const winnerMarketTags = document.getElementById('winner-market-tags');
+    const winnerConfidenceVal = document.getElementById('winner-confidence-val');
+    const winnerConfidenceFill = document.getElementById('winner-confidence-fill');
+
+    // Update terminal clock (UTC)
+    function updateClock() {
+      const now = new Date();
+      const year = now.getUTCFullYear();
+      const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(now.getUTCDate()).padStart(2, '0');
+      const hours = String(now.getUTCHours()).padStart(2, '0');
+      const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+      const seconds = String(now.getUTCSeconds()).padStart(2, '0');
+      utcClock.textContent = `${year}-${month}-${day} ${hours}:${minutes}:${seconds} UTC`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Log printer helper
+    function printSystemLog(message) {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      logStream.innerHTML = `<span class="time">[${hours}:${minutes}:${seconds}]</span> ${message}`;
+    }
+
+    // Render Agent Columns initially
+    function initAgentColumns() {
+      const container = document.getElementById('agent-columns');
+      container.innerHTML = '';
+      AGENTS_LIST.forEach((agent) => {
+        const card = document.createElement('div');
+        card.className = 'agent-card';
+        card.id = `agent-card-${agent.id}`;
+        card.innerHTML = `
+          <div class="winner-badge">WINNER</div>
+          <div class="agent-header">
+            <div class="agent-id">AGENT_0${agent.id} // SECURE_NODE</div>
+            <div class="agent-name">${agent.name}</div>
+            <div class="agent-spec">${agent.specialty}</div>
+          </div>
+          <div class="agent-stats">
+            <div class="stat-box">
+              <span class="stat-label">REPUTATION</span>
+              <span class="stat-value text-green">${agent.rep.toFixed(2)}</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">BID VALUE</span>
+              <span class="stat-value cyan" id="agent-bid-${agent.id}">---</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">CLAUDE CONF.</span>
+              <span class="stat-value" id="agent-conf-${agent.id}">---</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">FINAL SCORE</span>
+              <span class="stat-value" id="agent-score-${agent.id}">---</span>
+            </div>
+          </div>
+          <div class="score-telemetry">
+            <div class="score-telemetry-header">
+              <span>WEIGHTED RESOLUTION SCORE</span>
+              <span class="score-telemetry-value" id="agent-telemetry-val-${agent.id}">0.0000</span>
+            </div>
+            <div class="score-bar-container">
+              <div class="score-bar-fill" id="agent-bar-fill-${agent.id}"></div>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Leaderboard Management
+    function loadLeaderboard() {
+      const stored = localStorage.getItem('translation_arena_leaderboard');
+      if (stored) {
+        try {
+          leaderboard = JSON.parse(stored);
+          // Check if it matches structure (handles schema updates)
+          AGENTS_LIST.forEach(a => {
+            if (!leaderboard[a.name]) {
+              leaderboard[a.name] = { wins: 0, points: 0, usdc: 0 };
+            }
+          });
+        } catch (e) {
+          console.error("Failed parsing leaderboard", e);
+        }
+      }
+      renderLeaderboard();
+    }
+
+    function saveLeaderboard() {
+      localStorage.setItem('translation_arena_leaderboard', JSON.stringify(leaderboard));
+    }
+
+    function renderLeaderboard() {
+      // Sort agents by total points descending
+      const sorted = AGENTS_LIST.map(a => ({
+        name: a.name,
+        ...leaderboard[a.name]
+      })).sort((x, y) => y.points - x.points);
+
+      leaderboardBody.innerHTML = '';
+      sorted.forEach((agent, index) => {
+        const row = document.createElement('tr');
+        row.className = `leaderboard-row-${index}`;
+        row.innerHTML = `
+          <td class="rank-cell">#0${index + 1}</td>
+          <td class="agent-cell">${agent.name}</td>
+          <td class="numeric-cell">${agent.wins}</td>
+          <td class="numeric-cell" style="font-weight: bold;">${agent.points}</td>
+          <td class="numeric-cell highlight-usdc">$${agent.usdc} USDC</td>
+        `;
+        leaderboardBody.appendChild(row);
+      });
+    }
+
+    function updateLeaderboardStats(winnerName, pointsGained, royaltyUsdc) {
+      if (leaderboard[winnerName]) {
+        leaderboard[winnerName].wins += 1;
+        leaderboard[winnerName].points += pointsGained;
+        leaderboard[winnerName].usdc += royaltyUsdc;
+        saveLeaderboard();
+        renderLeaderboard();
+      }
+    }
+
+    // Reset leaderboard statistics
+    resetStatsBtn.addEventListener('click', () => {
+      if (confirm("Confirm reset of all persistent agent simulator stats?")) {
+        leaderboard = {
+          CN_Macro: { wins: 0, points: 0, usdc: 0 },
+          Generic_AI: { wins: 0, points: 0, usdc: 0 },
+          Asia_Expert: { wins: 0, points: 0, usdc: 0 }
+        };
+        saveLeaderboard();
+        printSystemLog("Leaderboard stats reset to 0 by system administrator.");
+      }
+    });
+
+    // Populate news feed on start
+    async function loadNewsFeed() {
+      try {
+        const res = await fetch('/api/news');
+        if (!res.ok) throw new Error("Could not load news");
+        newsFeed = await res.json();
+        
+        // Populate select options
+        newsSelect.innerHTML = '';
+        newsFeed.forEach((item, index) => {
+          const opt = document.createElement('option');
+          opt.value = index;
+          opt.textContent = `[${item.lang}] ${item.source} - ${item.hint}`;
+          newsSelect.appendChild(opt);
+        });
+
+        // Trigger initial update
+        updateNewsDisplay(0);
+        
+        // Enable run button
+        runButton.disabled = false;
+        auctionStatus.textContent = "READY FOR AUCTION";
+        printSystemLog("News feed telemetry initialized successfully.");
+      } catch (err) {
+        console.error(err);
+        auctionStatus.textContent = "OFFLINE - RETRY IN SECONDS";
+        auctionStatus.style.color = "var(--terminal-red)";
+        printSystemLog("Error connecting to server telemetry API.");
+      }
+    }
+
+    function updateNewsDisplay(index) {
+      selectedNewsIndex = parseInt(index);
+      const item = newsFeed[selectedNewsIndex];
+      if (item) {
+        newsSource.textContent = `SOURCE: ${item.source}`;
+        newsLang.textContent = item.lang;
+        newsOriginal.textContent = item.zh;
+        newsHint.textContent = `Transl. Hint: ${item.hint}`;
+      }
+    }
+
+    // News select event
+    newsSelect.addEventListener('change', (e) => {
+      updateNewsDisplay(e.target.value);
+    });
+
+    // Trigger POST /api/auction
+    runButton.addEventListener('click', async () => {
+      // 1. Reset state & Disable button
+      runButton.disabled = true;
+      auctionStatus.textContent = "AGENTS TRANSLATING...";
+      auctionStatus.className = "auction-status blinking-cursor";
+      auctionStatus.style.color = "var(--terminal-amber)";
+      winningCardContainer.classList.remove('visible');
+
+      // Clear previous run indicators on agent cards
+      for (let id = 0; id < 3; id++) {
+        const card = document.getElementById(`agent-card-${id}`);
+        card.classList.remove('winner');
+        document.getElementById(`agent-bid-${id}`).textContent = '---';
+        document.getElementById(`agent-conf-${id}`).textContent = '---';
+        document.getElementById(`agent-score-${id}`).textContent = '---';
+        document.getElementById(`agent-telemetry-val-${id}`).textContent = '0.0000';
+        document.getElementById(`agent-bar-fill-${id}`).style.width = '0%';
+      }
+
+      printSystemLog(`Initiated auction request for news feed item #${selectedNewsIndex}...`);
+
+      try {
+        const res = await fetch('/api/auction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newsIndex: selectedNewsIndex })
+        });
+
+        if (!res.ok) {
+          throw new Error(`Server returned error status: ${res.status}`);
+        }
+
+        const data = await res.json();
+        
+        // Render results with delay simulation or direct calculations
+        // The scores are returned, let's display them
+        auctionStatus.textContent = "COMPUTING SCORES...";
+        auctionStatus.className = "auction-status";
+        
+        setTimeout(() => {
+          // Reveal stats and trigger score bar transitions
+          data.agents.forEach((agentResult, idx) => {
+            document.getElementById(`agent-bid-${idx}`).textContent = `$${agentResult.bid}`;
+            document.getElementById(`agent-conf-${idx}`).textContent = `${Math.round(agentResult.response.confidence_score * 100)}%`;
+            document.getElementById(`agent-score-${idx}`).textContent = agentResult.score.toFixed(4);
+            document.getElementById(`agent-telemetry-val-${idx}`).textContent = agentResult.score.toFixed(4);
+            
+            // Score progress bar filling (score is 0-1 theoretically, we convert to %)
+            // Max score is 1.0, let's set width
+            const scorePercent = Math.min(Math.max(agentResult.score * 100, 0), 100);
+            document.getElementById(`agent-bar-fill-${idx}`).style.width = `${scorePercent}%`;
+          });
+
+          // Highlight Winner Card
+          const winnerIndex = data.winner_index;
+          const winner = data.agents[winnerIndex];
+          const winnerCard = document.getElementById(`agent-card-${winnerIndex}`);
+          winnerCard.classList.add('winner');
+
+          // Reveal winning market contract card at bottom after 400ms
+          setTimeout(() => {
+            winnerMarketTitle.textContent = winner.response.title;
+            winnerMarketCriteria.textContent = winner.response.resolution_criteria;
+            
+            // Build tags
+            winnerMarketTags.innerHTML = '';
+            winner.response.tags.forEach(tag => {
+              const span = document.createElement('span');
+              span.className = 'market-tag';
+              span.textContent = tag;
+              winnerMarketTags.appendChild(span);
+            });
+
+            // Confidence score meter
+            const confidencePercent = Math.round(winner.response.confidence_score * 100);
+            winnerConfidenceVal.textContent = `CONFIDENCE: ${confidencePercent}%`;
+            winnerConfidenceFill.style.width = `${confidencePercent}%`;
+
+            winningCardContainer.classList.add('visible');
+            
+            // Update leaderboard & persist
+            updateLeaderboardStats(winner.name, data.points_gained, data.royalty_usdc);
+
+            auctionStatus.textContent = "AUCTION RESOLVED";
+            auctionStatus.style.color = "var(--terminal-green)";
+            
+            printSystemLog(`Auction finished. Agent [${winner.name}] won with Score: ${winner.score}. Awarded +${data.points_gained} PTS, +$${data.royalty_usdc} USDC royalty.`);
+            runButton.disabled = false;
+          }, 400);
+
+        }, 800);
+
+      } catch (err) {
+        console.error("Auction failure:", err);
+        auctionStatus.textContent = "AUCTION FAILED";
+        auctionStatus.className = "auction-status";
+        auctionStatus.style.color = "var(--terminal-red)";
+        printSystemLog(`Critical failure in processing transaction auction: ${err.message}`);
+        runButton.disabled = false;
+      }
+    });
+
+    // Main initializers
+    initAgentColumns();
+    loadLeaderboard();
+    loadNewsFeed();
+  </script>
+</body>
+</html>
