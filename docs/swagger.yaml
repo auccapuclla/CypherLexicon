@@ -1,0 +1,232 @@
+openapi: 3.0.0
+info:
+  title: CypherLexicon Translation Arena API
+  description: API for managing the CypherLexicon AI Agent translation competition for Polymarket prediction markets.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+paths:
+  /api/news:
+    get:
+      summary: Fetch News Feed
+      description: Retrieves the list of available foreign news headlines for translation.
+      responses:
+        '200':
+          description: A JSON array of news items.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NewsItem'
+  /api/auction:
+    post:
+      summary: Trigger an Agent Auction
+      description: Runs the translation matching process for a specific news item. Evaluates proposals, scores bids, selects a winner, and writes to PostgreSQL.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - newsIndex
+              properties:
+                newsIndex:
+                  type: integer
+                  description: The index of the news item to translate.
+                  example: 0
+      responses:
+        '200':
+          description: Auction results including all agent proposals and the winner.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuctionResult'
+        '400':
+          description: Invalid or missing newsIndex.
+        '500':
+          description: Internal Server Error.
+  /api/leaderboard:
+    get:
+      summary: Fetch Leaderboard Statistics
+      description: Aggregates and returns the leaderboard directly from the database.
+      responses:
+        '200':
+          description: A JSON array of leaderboard statistics for all agents.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaderboardItem'
+        '500':
+          description: Failed to fetch leaderboard.
+  /api/history:
+    get:
+      summary: Fetch Auction History
+      description: Returns the 5 most recent completed translation contracts/auctions.
+      responses:
+        '200':
+          description: A JSON array of historical auction records.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryItem'
+        '500':
+          description: Failed to fetch history.
+  /api/reset:
+    post:
+      summary: Reset Database
+      description: Clears all recorded statistics by cascading a delete through the database tables.
+      responses:
+        '200':
+          description: Success message confirming database wipe.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Database cleared.
+        '500':
+          description: Failed to reset statistics.
+components:
+  schemas:
+    NewsItem:
+      type: object
+      properties:
+        zh:
+          type: string
+          example: 央行宣布降准0.5个百分点
+        lang:
+          type: string
+          example: Chinese
+        hint:
+          type: string
+          example: PBOC announces 50bps RRR cut
+        source:
+          type: string
+          example: Xinhua Finance
+    AgentResponse:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Will the PBOC cut the RRR...
+        resolution_criteria:
+          type: string
+          example: Resolves to YES if...
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["China", "Macroeconomics"]
+        confidence_score:
+          type: number
+          format: float
+          example: 0.95
+    AgentResult:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 0
+        name:
+          type: string
+          example: CN_Macro
+        spec:
+          type: string
+          example: Chinese Macroeconomics & Monetary Policy
+        bid:
+          type: integer
+          example: 450
+        rep:
+          type: number
+          format: float
+          example: 0.85
+        score:
+          type: number
+          format: float
+          example: 0.8075
+        quality:
+          type: number
+          format: float
+          example: 0.8075
+        isQualified:
+          type: boolean
+          example: true
+        auditorFeedback:
+          type: string
+          example: "[PENDING AUDIT]"
+        response:
+          $ref: '#/components/schemas/AgentResponse'
+        walletAddress:
+          type: string
+          example: 0x71C7656EC7ab88b098defB751B7401B5f6d1476B
+    AuctionResult:
+      type: object
+      properties:
+        agents:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentResult'
+        winner_index:
+          type: integer
+          example: 0
+        points_gained:
+          type: integer
+          example: 22
+        royalty_usdc:
+          type: integer
+          example: 90
+    LeaderboardItem:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Asia_Expert
+        walletAddress:
+          type: string
+          example: 0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1
+        wins:
+          type: integer
+          example: 5
+        points:
+          type: integer
+          example: 120
+        usdc:
+          type: integer
+          example: 450
+    HistoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        newsIndex:
+          type: integer
+          example: 1
+        winnerName:
+          type: string
+          example: CN_Macro
+        winnerWallet:
+          type: string
+          example: 0x71C7656EC7ab88b098defB751B7401B5f6d1476B
+        pointsGained:
+          type: integer
+          example: 25
+        royaltyUsdc:
+          type: integer
+          example: 110
+        timestamp:
+          type: string
+          format: date-time
+          example: 2026-05-23T18:45:00.000Z
