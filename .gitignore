@@ -10,3 +10,7 @@ dist/
 
 # Operating System files
 .DS_Store
+
+# Hardhat output and cache
+artifacts/
+cache/
